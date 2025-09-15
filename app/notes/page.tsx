@@ -60,7 +60,7 @@ export default function NotesPage() {
   useEffect(() => {
     fetchMe();
     loadNotes();
-  }, []);
+  });
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
