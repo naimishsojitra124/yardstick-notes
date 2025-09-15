@@ -14,10 +14,6 @@ export function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-  if(!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
   // If user is logged in and trying to access login/register → redirect to /notes
   if (token && publicRoutes.includes(pathname)) {
     return NextResponse.redirect(new URL("/notes", req.url));
