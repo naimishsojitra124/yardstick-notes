@@ -1,0 +1,517 @@
+{
+  "info": {
+    "name": "Yardstick - Grader Tests",
+    "description": "Automated tests for the Yardstick assignment (health, login, tenant isolation, RBAC, subscription gating, notes CRUD). Set {{baseUrl}} to your deployment (default http://localhost:3000).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "TOKEN_ACME_ADMIN",
+      "value": ""
+    },
+    {
+      "key": "TOKEN_ACME_USER",
+      "value": ""
+    },
+    {
+      "key": "TOKEN_GLOBEX_ADMIN",
+      "value": ""
+    },
+    {
+      "key": "TOKEN_GLOBEX_USER",
+      "value": ""
+    },
+    {
+      "key": "ACME_NOTE_ID",
+      "value": ""
+    },
+    {
+      "key": "INVITED_EMAIL",
+      "value": "invited1@acme.test"
+    },
+    {
+      "key": "INVITED_TEMP_PASSWORD",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health: status 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('health: body ok', function () {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('status', 'ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "02 - Login: admin@acme.test",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"admin@acme.test\",\"password\":\"password\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('login acme admin returns 200', function(){ pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('login acme admin gives token', function(){ pm.expect(json).to.have.property('token'); });",
+              "pm.environment.set('TOKEN_ACME_ADMIN', json.token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "03 - Login: user@acme.test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key":"Content-Type","value":"application/json" }],
+        "body": { "mode":"raw", "raw":"{\"email\":\"user@acme.test\",\"password\":\"password\"}" },
+        "url": { "raw":"{{baseUrl}}/api/auth/login", "host":["{{baseUrl}}"], "path":["api","auth","login"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('login acme user 200', ()=> pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('token exists for acme user', ()=> pm.expect(json).to.have.property('token'))",
+              "pm.environment.set('TOKEN_ACME_USER', json.token);"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "04 - Login: admin@globex.test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key":"Content-Type","value":"application/json" }],
+        "body": { "mode":"raw", "raw":"{\"email\":\"admin@globex.test\",\"password\":\"password\"}" },
+        "url": { "raw":"{{baseUrl}}/api/auth/login", "host":["{{baseUrl}}"], "path":["api","auth","login"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('login globex admin 200', ()=> pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('token exists for globex admin', ()=> pm.expect(json).to.have.property('token'))",
+              "pm.environment.set('TOKEN_GLOBEX_ADMIN', json.token);"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "05 - Login: user@globex.test",
+      "request": {
+        "method": "POST",
+        "header": [{ "key":"Content-Type","value":"application/json" }],
+        "body": { "mode":"raw", "raw":"{\"email\":\"user@globex.test\",\"password\":\"password\"}" },
+        "url": { "raw":"{{baseUrl}}/api/auth/login", "host":["{{baseUrl}}"], "path":["api","auth","login"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('login globex user 200', ()=> pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('token exists for globex user', ()=> pm.expect(json).to.have.property('token'))",
+              "pm.environment.set('TOKEN_GLOBEX_USER', json.token);"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "06 - ACME: Create Note 1 (should succeed)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key":"Content-Type","value":"application/json" },
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_USER}}"}
+        ],
+        "body": { "mode":"raw", "raw":"{\"title\":\"ACME Note 1\",\"content\":\"First note content\"}" },
+        "url": { "raw":"{{baseUrl}}/api/notes", "host":["{{baseUrl}}"], "path":["api","notes"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('create note 1 status 201', ()=> pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('note has id', ()=> pm.expect(j).to.have.property('id'));",
+              "pm.environment.set('ACME_NOTE_ID', j.id);"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "07 - ACME: Create Note 2 (should succeed)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key":"Content-Type","value":"application/json" },
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_USER}}"}
+        ],
+        "body": { "mode":"raw", "raw":"{\"title\":\"ACME Note 2\",\"content\":\"Second note\"}" },
+        "url": { "raw":"{{baseUrl}}/api/notes", "host":["{{baseUrl}}"], "path":["api","notes"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('create note 2 status 201', ()=> pm.response.to.have.status(201));"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "08 - ACME: Create Note 3 (should succeed)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key":"Content-Type","value":"application/json" },
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_USER}}"}
+        ],
+        "body": { "mode":"raw", "raw":"{\"title\":\"ACME Note 3\",\"content\":\"Third note\"}" },
+        "url": { "raw":"{{baseUrl}}/api/notes", "host":["{{baseUrl}}"], "path":["api","notes"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('create note 3 status 201', ()=> pm.response.to.have.status(201));"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "09 - ACME: Create Note 4 (should fail - limit reached)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key":"Content-Type","value":"application/json" },
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_USER}}"}
+        ],
+        "body": { "mode":"raw", "raw":"{\"title\":\"ACME Note 4\",\"content\":\"Fourth note should be blocked\"}" },
+        "url": { "raw":"{{baseUrl}}/api/notes", "host":["{{baseUrl}}"], "path":["api","notes"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('create note 4 blocked -> 403', ()=> pm.response.to.have.status(403));",
+              "const j = pm.response.json();",
+              "pm.test('error message is Note limit reached', ()=> pm.expect(j).to.have.property('error','Note limit reached'));"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "10 - RBAC: Attempt Invite as ACME Member (should 403)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key":"Content-Type","value":"application/json" },
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_USER}}"}
+        ],
+        "body": { "mode":"raw", "raw":"{\"email\":\"invited-by-member@acme.test\",\"role\":\"Member\"}" },
+        "url": { "raw":"{{baseUrl}}/api/tenants/acme/invite", "host":["{{baseUrl}}"], "path":["api","tenants","acme","invite"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('invite by member forbidden 403', ()=> pm.response.to.have.status(403));"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "11 - RBAC: Invite as ACME Admin (should succeed)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key":"Content-Type","value":"application/json" },
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_ADMIN}}"}
+        ],
+        "body": { "mode":"raw", "raw":"{\"email\":\"{{INVITED_EMAIL}}\",\"role\":\"Member\"}" },
+        "url": { "raw":"{{baseUrl}}/api/tenants/acme/invite", "host":["{{baseUrl}}"], "path":["api","tenants","acme","invite"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('invite by admin returns 201', ()=> pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('response has tempPassword', ()=> pm.expect(j).to.have.property('tempPassword'));",
+              "pm.environment.set('INVITED_TEMP_PASSWORD', j.tempPassword);"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "12 - Tenant isolation: Globex user list notes (should not include ACME notes)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key":"Authorization","value":"Bearer {{TOKEN_GLOBEX_USER}}"}
+        ],
+        "url": { "raw":"{{baseUrl}}/api/notes", "host":["{{baseUrl}}"], "path":["api","notes"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('globex notes request 200', ()=> pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('globex should have no acme notes (array)', ()=> pm.expect(j).to.be.an('array'))",
+              ""
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "13 - Upgrade: Attempt by ACME Member (should 403)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_USER}}"}
+        ],
+        "url": { "raw":"{{baseUrl}}/api/tenants/acme/upgrade", "host":["{{baseUrl}}"], "path":["api","tenants","acme","upgrade"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('member cannot upgrade 403', ()=> pm.response.to.have.status(403));"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "14 - Upgrade: ACME Admin upgrades to Pro (should succeed)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_ADMIN}}"}
+        ],
+        "url": { "raw":"{{baseUrl}}/api/tenants/acme/upgrade", "host":["{{baseUrl}}"], "path":["api","tenants","acme","upgrade"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('admin upgrade returns 200', ()=> pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('upgrade success true', ()=> pm.expect(j).to.have.property('success', true));"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "15 - ACME: Create Note 4 after upgrade (should succeed)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key":"Content-Type","value":"application/json" },
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_USER}}"}
+        ],
+        "body": { "mode":"raw", "raw":"{\"title\":\"ACME Note 4 after upgrade\",\"content\":\"Fourth note after upgrade\"}" },
+        "url": { "raw":"{{baseUrl}}/api/notes", "host":["{{baseUrl}}"], "path":["api","notes"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('create note 4 after upgrade 201', ()=> pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('note created has id', ()=> pm.expect(j).to.have.property('id'));"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "16 - Notes CRUD: Get ACME_NOTE_ID (GET by id)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_USER}}"}
+        ],
+        "url": { "raw":"{{baseUrl}}/api/notes/{{ACME_NOTE_ID}}", "host":["{{baseUrl}}"], "path":["api","notes","{{ACME_NOTE_ID}}"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('get note by id 200', ()=> pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('note id matches', ()=> pm.expect(j).to.have.property('id', pm.environment.get('ACME_NOTE_ID')));"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "17 - Notes CRUD: Update ACME_NOTE_ID (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key":"Content-Type","value":"application/json" },
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_USER}}"}
+        ],
+        "body": { "mode":"raw", "raw":"{\"title\":\"ACME Note 1 - updated\",\"content\":\"Updated content\"}" },
+        "url": { "raw":"{{baseUrl}}/api/notes/{{ACME_NOTE_ID}}", "host":["{{baseUrl}}"], "path":["api","notes","{{ACME_NOTE_ID}}"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('update note 200', ()=> pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('title updated', ()=> pm.expect(j).to.have.property('title','ACME Note 1 - updated'))"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "18 - Notes CRUD: Delete ACME_NOTE_ID (DELETE)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key":"Authorization","value":"Bearer {{TOKEN_ACME_USER}}"}
+        ],
+        "url": { "raw":"{{baseUrl}}/api/notes/{{ACME_NOTE_ID}}", "host":["{{baseUrl}}"], "path":["api","notes","{{ACME_NOTE_ID}}"] }
+      },
+      "event":[
+        {
+          "listen":"test",
+          "script":{
+            "exec":[
+              "pm.test('delete returns 204', ()=> pm.response.to.have.status(204));"
+            ],
+            "type":"text/javascript"
+          }
+        }
+      ]
+    }
+
+  ]
+}
