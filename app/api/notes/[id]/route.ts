@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { applyCorsHeaders } from "@/lib/cors";
 import { requireAuthTenant } from "@/lib/requireAuthTenant";
 import { MemberRole } from "@prisma/client";
 
-export async function OPTIONS() {
-  const r = NextResponse.json({});
-  applyCorsHeaders(r);
-  return r;
+export async function OPTIONS(req: NextRequest) {
+  const res = NextResponse.json({}, { status: 204 })
+  applyCorsHeaders(res, req)
+  return res
 }
 
 export async function GET(

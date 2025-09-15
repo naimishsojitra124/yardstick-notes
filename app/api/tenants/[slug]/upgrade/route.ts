@@ -1,8 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAuthTenant } from "@/lib/requireAuthTenant";
 import prisma from "@/lib/db";
 import { applyCorsHeaders } from "@/lib/cors";
 import { MemberRole, PlanType } from "@prisma/client";
+
+
+export async function OPTIONS(req: NextRequest) {
+  const res = NextResponse.json({}, { status: 204 })
+  applyCorsHeaders(res, req)
+  return res
+}
 
 export async function POST(
   req: Request,
@@ -33,10 +40,4 @@ export async function POST(
   const ok = NextResponse.json({ success: true });
   applyCorsHeaders(ok);
   return ok;
-}
-
-export async function OPTIONS() {
-  const r = NextResponse.json({});
-  applyCorsHeaders(r);
-  return r;
 }

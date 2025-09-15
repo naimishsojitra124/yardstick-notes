@@ -1,7 +1,13 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getAuthFromReq } from '@/lib/auth'
 import prisma from '@/lib/db'
 import { applyCorsHeaders } from '@/lib/cors'
+
+export async function OPTIONS(req: NextRequest) {
+  const res = NextResponse.json({}, { status: 204 })
+  applyCorsHeaders(res, req)
+  return res
+}
 
 export async function GET(req: Request) {
   const res = NextResponse.json({}, { status: 401 })
@@ -22,10 +28,4 @@ export async function GET(req: Request) {
   })
   applyCorsHeaders(ok)
   return ok
-}
-
-export async function OPTIONS() {
-  const r = NextResponse.json({})
-  applyCorsHeaders(r)
-  return r
 }

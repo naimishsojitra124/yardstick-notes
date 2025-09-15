@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import prisma from '@/lib/db'
 import { getAuthFromReq } from '@/lib/auth'
@@ -11,6 +11,12 @@ const BodySchema = z.object({
   email: z.string().email(),
   role: z.enum(['Admin', 'Member']).optional()
 })
+
+export async function OPTIONS(req: NextRequest) {
+  const res = NextResponse.json({}, { status: 204 })
+  applyCorsHeaders(res, req)
+  return res
+}
 
 export async function POST(
   req: Request,
@@ -91,10 +97,4 @@ export async function POST(
   const ok = NextResponse.json({ user, tempPassword }, { status: 201 })
   applyCorsHeaders(ok)
   return ok
-}
-
-export async function OPTIONS() {
-  const r = NextResponse.json({})
-  applyCorsHeaders(r)
-  return r
 }
